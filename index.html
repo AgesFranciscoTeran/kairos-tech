@@ -61,6 +61,25 @@
   .chip.ready{color:#c9a24b}
   .chip.design{color:#c98b9a}
 
+  /* ── galería de diseño ── */
+  .gallery{margin-top:46px}
+  .gallery h2{font-family:var(--serif); font-weight:400; font-size:22px; color:var(--gold);
+    letter-spacing:.02em; padding-bottom:10px; border-bottom:1px solid var(--line)}
+  .gallery .intro{font-size:14.5px; color:var(--sage); margin:14px 0 26px; max-width:68ch}
+  figure{margin:0 0 30px}
+  figure a{display:block; border-radius:12px; overflow:hidden; border:1px solid var(--line);
+    transition:border-color .2s}
+  figure a:hover{border-color:var(--gold-dim)}
+  figure a:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
+  figure img{width:100%; height:auto; display:block}
+  figcaption{margin-top:11px; font-size:13.5px; color:var(--sage); line-height:1.5}
+  figcaption b{color:var(--cream); font-weight:600; display:block; margin-bottom:2px;
+    font-family:var(--serif); font-size:15px}
+  .gallery-cta{display:inline-block; margin-top:2px; font-size:13px; letter-spacing:.06em;
+    color:var(--gold); text-decoration:none; border:1px solid var(--line);
+    border-radius:999px; padding:9px 18px; transition:border-color .2s}
+  .gallery-cta:hover{border-color:var(--gold)}
+
   /* ── nota de estado ── */
   .status{margin-top:38px; border:1px solid var(--line); border-left:3px solid var(--gold);
     border-radius:0 12px 12px 0; padding:22px 24px; background:rgba(20,42,32,.4)}
@@ -129,6 +148,55 @@
     </a>
 
   </div>
+
+  <section class="gallery">
+    <h2>Diseño de producto</h2>
+    <p class="intro">
+      El recorrido completo del sistema, de la lectura pasiva al escalamiento humano.
+      Las pantallas muestran el principio de intervención por niveles: Kairos hace lo mínimo
+      necesario y solo escala cuando la activación no cede.
+    </p>
+
+    <figure>
+      <a href="mockups/01-wearable.png" target="_blank" rel="noopener">
+        <img src="mockups/01-wearable.jpg" width="1920" height="1080" loading="lazy"
+             alt="Wearable Kairos: bisel de jade, caja en oro rosa y correa carmín grabada.">
+      </a>
+      <figcaption>
+        <b>El wearable</b>
+        Bisel de jade sobre caja en oro rosa. Aloja los sensores de PPG, actividad
+        electrodérmica, temperatura y movimiento.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <a href="mockups/02-monitoreo-deteccion.png" target="_blank" rel="noopener">
+        <img src="mockups/02-monitoreo-deteccion.jpg" width="1920" height="1080" loading="lazy"
+             alt="Dos pantallas: panel de monitoreo con HRV y temperatura, y aviso de activación sostenida.">
+      </a>
+      <figcaption>
+        <b>Monitoreo y detección</b>
+        A la izquierda, el estado en reposo: métricas y tendencia de recuperación. A la derecha,
+        activación sostenida detectada — el sistema nombra la evidencia que la respalda antes de
+        proponer nada.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <a href="mockups/03-intervencion-escalamiento.png" target="_blank" rel="noopener">
+        <img src="mockups/03-intervencion-escalamiento.jpg" width="1920" height="1080" loading="lazy"
+             alt="Dos pantallas: respiración guiada con temporizador, y escalamiento a un contacto de confianza.">
+      </a>
+      <figcaption>
+        <b>Intervención y escalamiento</b>
+        Primero la regulación guiada, de noventa segundos. Si la activación no cede, el sistema
+        contacta a la persona de confianza que el usuario configuró — siempre con opción de
+        cancelar.
+      </figcaption>
+    </figure>
+
+    <a class="gallery-cta" href="render/">Ver el render 3D interactivo &rarr;</a>
+  </section>
 
   <section class="status">
     <h3>Estado real del proyecto</h3>
