@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0f2a1f" />
+<title>Kairos · IMU Gating</title>
+<style>
+  :root{
+    --bg:#0f2a1f; --bg2:#0b2018; --card:#16382a; --card2:#1b4030;
+    --line:#2a5741; --gold:#e0b877; --gold-soft:#c9a24b;
+    --ink:#f2ede2; --muted:#8fae9d;
+    --clear:#7fc79f;      /* señales elegibles */
+    --gated:#d47a5f;      /* interpretación bloqueada */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans); color:var(--ink);
+    background:radial-gradient(120% 80% at 50% -10%,#164031 0%,var(--bg) 45%,var(--bg2) 100%);
+    min-height:100vh; display:flex; justify-content:center;
+    padding:22px 16px 32px; -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; gap:18px}
+
+  /* header */
+  header{display:flex; align-items:center; gap:12px; padding-top:4px}
+  .badge{width:38px;height:38px;border-radius:11px;background:#0c1f17;
+    border:1px solid var(--line); display:grid; place-items:center; flex:none}
+  .badge svg{width:22px;height:22px}
+  .brand{display:flex; flex-direction:column; line-height:1}
+  .brand .name{font-family:var(--serif); font-size:26px; letter-spacing:.14em;
+    color:var(--gold); font-weight:600}
+  .brand .sub{font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--muted); margin-top:5px}
+
+  /* intro / start */
+  .intro{background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--line); border-radius:20px; padding:22px}
+  .intro h1{font-family:var(--serif); font-weight:600; font-size:22px; line-height:1.25;
+    margin-bottom:10px}
+  .intro p{color:var(--muted); font-size:14px; line-height:1.55}
+  .start{margin-top:18px; width:100%; border:0; cursor:pointer;
+    background:linear-gradient(180deg,var(--gold),var(--gold-soft));
+    color:#2a1c05; font-weight:700; font-size:16px; letter-spacing:.02em;
+    padding:15px; border-radius:14px; transition:filter .15s, transform .05s}
+  .start:hover{filter:brightness(1.05)}
+  .start:active{transform:translateY(1px)}
+  .start:focus-visible{outline:3px solid var(--gold); outline-offset:3px}
+
+  /* live panel */
+  .live{display:none; flex-direction:column; gap:16px}
+  .live.on{display:flex}
+
+  .verdict{border-radius:18px; padding:16px 18px; border:1px solid var(--line);
+    display:flex; align-items:center; gap:14px; transition:background .35s,border-color .35s}
+  .verdict .dot{width:12px;height:12px;border-radius:50%; flex:none; transition:background .35s}
+  .verdict .vtxt{display:flex; flex-direction:column; gap:3px}
+  .verdict .vtxt b{font-size:15px; letter-spacing:.02em}
+  .verdict .vtxt span{font-size:12.5px; color:var(--muted); line-height:1.4}
+  .verdict.clear{background:rgba(127,199,159,.10); border-color:rgba(127,199,159,.4)}
+  .verdict.clear .dot{background:var(--clear); box-shadow:0 0 14px var(--clear)}
+  .verdict.gated{background:rgba(212,122,95,.12); border-color:rgba(212,122,95,.45)}
+  .verdict.gated .dot{background:var(--gated); box-shadow:0 0 14px var(--gated)}
+
+  /* ring */
+  .ringcard{background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:22px; display:flex; flex-direction:column; align-items:center}
+  .ringwrap{position:relative; width:190px; height:190px}
+  .ringwrap svg{transform:rotate(-90deg)}
+  .ring-bg{stroke:#0e2419; stroke-width:14; fill:none}
+  .ring-fg{stroke:var(--clear); stroke-width:14; fill:none; stroke-linecap:round;
+    transition:stroke-dashoffset .12s linear, stroke .35s}
+  .ringlabel{position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center}
+  .ringlabel .state{font-family:var(--serif); font-size:24px; font-weight:600; letter-spacing:.02em}
+  .ringlabel .cap{font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); margin-top:6px}
+
+  /* sparkline */
+  .spark{width:100%; height:70px; margin-top:18px}
+  .spark canvas{width:100%; height:70px; display:block}
+
+  /* readouts */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .cell{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:13px 14px}
+  .cell .k{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-soft)}
+  .cell .v{font-size:20px; font-weight:600; margin-top:4px; font-variant-numeric:tabular-nums}
+  .cell .u{font-size:12px; color:var(--muted); font-weight:400}
+
+  footer{color:var(--muted); font-size:12px; line-height:1.5; padding:2px 4px}
+  footer b{color:var(--ink); font-weight:600}
+  .flag{display:inline-block; margin-top:8px; font-size:11px; letter-spacing:.06em;
+    color:var(--gold-soft); border:1px solid var(--line); border-radius:999px;
+    padding:4px 10px}
+  .modebtn{display:inline-block; margin:8px 0 0 8px; font-size:11px; letter-spacing:.06em;
+    font-family:inherit; color:var(--ink); background:transparent; cursor:pointer;
+    border:1px solid var(--gold-soft); border-radius:999px; padding:4px 12px;
+    transition:background .18s}
+  .modebtn:hover{background:rgba(201,162,75,.16)}
+  .modebtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  .err{color:var(--gated); font-size:13px; margin-top:12px; display:none}
+
+  @media (prefers-reduced-motion: reduce){
+    .ring-fg,.verdict,.verdict .dot{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 12c3-4 8-6 14-6-3 1.6-5 3.4-6 6 1 2.6 3 4.4 6 6-6 0-11-2-14-6z"
+              fill="#e0b877"/>
+        <circle cx="8.3" cy="12" r="1.15" fill="#0c1f17"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <div class="name">KAIROS</div>
+      <div class="sub">IMU Gating · Live</div>
+    </div>
+  </header>
+
+  <!-- Intro / permiso -->
+  <section class="intro" id="intro">
+    <h1>Descartar el confusor de ejercicio</h1>
+    <p>Una caída de HRV con subida de EDA puede ser estrés… o subir escaleras.
+       Este prototipo lee el <b>acelerómetro y giroscopio</b> reales del teléfono, clasifica
+       el movimiento en vivo y decide si la fisiología es <b>elegible</b> para interpretarse o
+       debe <b>bloquearse</b>. Es la capa de gating por IMU de Kairos, funcionando.</p>
+    <button class="start" id="startBtn">Iniciar sensores</button>
+    <div class="err" id="err"></div>
+  </section>
+
+  <!-- Panel en vivo -->
+  <section class="live" id="live">
+    <div class="verdict clear" id="verdict">
+      <div class="dot"></div>
+      <div class="vtxt">
+        <b id="vTitle">Señales elegibles</b>
+        <span id="vSub">En reposo — la fisiología puede interpretarse.</span>
+      </div>
+    </div>
+
+    <div class="ringcard">
+      <div class="ringwrap">
+        <svg width="190" height="190" viewBox="0 0 190 190">
+          <circle class="ring-bg" cx="95" cy="95" r="80"></circle>
+          <circle class="ring-fg" id="ring" cx="95" cy="95" r="80"
+                  stroke-dasharray="502.6" stroke-dashoffset="502.6"></circle>
+        </svg>
+        <div class="ringlabel">
+          <div class="state" id="stateTxt">Reposo</div>
+          <div class="cap">Movimiento</div>
+        </div>
+      </div>
+      <div class="spark"><canvas id="spark"></canvas></div>
+    </div>
+
+    <div class="grid">
+      <div class="cell"><div class="k">Movimiento</div>
+        <div class="v"><span id="mov">0.00</span> <span class="u">m/s²</span></div></div>
+      <div class="cell"><div class="k">Aceleración</div>
+        <div class="v"><span id="acc">0.00</span> <span class="u">m/s²</span></div></div>
+      <div class="cell"><div class="k">Rotación</div>
+        <div class="v"><span id="gyr">0.0</span> <span class="u">°/s</span></div></div>
+      <div class="cell"><div class="k">Estado</div>
+        <div class="v" style="font-size:16px" id="cls">Reposo</div></div>
+    </div>
+    <div id="modeFlag"></div>
+  </section>
+
+  <footer>
+    <b>Cómo se conecta:</b> mapea la sección 1.5 de la arquitectura (gating de seguridad).
+    Si el IMU detecta actividad física, Kairos no interpreta EDA/HRV como estrés — evita la
+    falsa alarma más frecuente antes de que ocurra. Los umbrales aquí son una heurística
+    demostrativa, no el modelo final.
+    <span class="flag">Todo el procesamiento ocurre en el dispositivo · nada se transmite</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const C = 2*Math.PI*80;                      // circunferencia del anillo
+  const ring = document.getElementById('ring');
+  const stateTxt = document.getElementById('stateTxt');
+  const clsTxt = document.getElementById('cls');
+  const movEl = document.getElementById('mov');
+  const accEl = document.getElementById('acc');
+  const gyrEl = document.getElementById('gyr');
+  const verdict = document.getElementById('verdict');
+  const vTitle = document.getElementById('vTitle');
+  const vSub = document.getElementById('vSub');
+  const canvas = document.getElementById('spark');
+  const ctx = canvas.getContext('2d');
+  const errEl = document.getElementById('err');
+  const modeFlag = document.getElementById('modeFlag');
+
+  // Umbrales heurísticos de movimiento (std de |aceleración lineal|, m/s²)
+  const T = { still:0.15, light:0.8, walk:3.0 };   // >T.walk => vigoroso
+  const GATE = T.light;                            // gating: caminar o más => bloquear
+
+  // Buffers
+  const magBuf = [];          // magnitud de aceleración (para std móvil ~1.2 s)
+  const WIN = 60;             // muestras (~1.2 s a 50 Hz)
+  const sparkBuf = new Array(120).fill(0);
+  let gravity = [0,0,0];      // estimador de gravedad (low-pass)
+  let simulated = false, gotReal = false, lastGyr = 0;
+
+  function classify(mov){
+    if(mov < T.still) return {name:'Reposo', frac:mov/T.walk};
+    if(mov < T.light) return {name:'Movimiento leve', frac:mov/T.walk};
+    if(mov < T.walk)  return {name:'Caminando', frac:mov/T.walk};
+    return {name:'Vigoroso', frac:1};
+  }
+
+  function render(mov, accMag, gyr){
+    const c = classify(mov);
+    const frac = Math.max(0, Math.min(1, c.frac));
+    ring.setAttribute('stroke-dashoffset', C*(1-frac));
+
+    const gated = mov >= GATE;
+    const col = gated ? getVar('--gated') : getVar('--clear');
+    ring.style.stroke = col;
+    stateTxt.textContent = c.name;
+    clsTxt.textContent = c.name;
+    movEl.textContent = mov.toFixed(2);
+    accEl.textContent = accMag.toFixed(2);
+    gyrEl.textContent = gyr.toFixed(0);
+
+    verdict.className = 'verdict ' + (gated ? 'gated' : 'clear');
+    if(gated){
+      vTitle.textContent = 'Interpretación bloqueada';
+      vSub.textContent = 'Actividad física detectada — no se infiere estrés fisiológico.';
+    } else {
+      vTitle.textContent = 'Señales elegibles';
+      vSub.textContent = 'En reposo — la fisiología puede interpretarse.';
+    }
+    drawSpark(mov, gated);
+  }
+
+  let cssW = 300, cssH = 70;
+  function drawSpark(v, gated){
+    sparkBuf.push(Math.min(v, T.walk)); sparkBuf.shift();
+    const w = cssW, h = cssH, n = sparkBuf.length;
+    ctx.clearRect(0,0,w,h);
+    // línea de umbral de gating
+    const gy = h - (GATE/T.walk)*h*0.9 - 4;
+    ctx.strokeStyle = 'rgba(224,184,119,.35)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(w,gy); ctx.stroke(); ctx.setLineDash([]);
+    // curva
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const x=i/(n-1)*w, y=h-(sparkBuf[i]/T.walk)*h*0.9-4;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.strokeStyle = gated ? getVar('--gated') : getVar('--clear');
+    ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
+  }
+
+  function getVar(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function onMotion(e){
+    // Chrome en escritorio emite eventos devicemotion con valores nulos.
+    // Solo contamos el evento como real si trae datos utilizables.
+    const lin = e.acceleration;
+    const gAcc = e.accelerationIncludingGravity;
+    const linOK = lin  && lin.x  !== null && lin.y  !== null && lin.z  !== null;
+    const gOK   = gAcc && gAcc.x !== null && gAcc.y !== null && gAcc.z !== null;
+    if(!linOK && !gOK) return;        // sin sensores: deja que arranque la simulación
+
+    gotReal = true;
+    if(simulated) stopSim();          // llegaron datos reales: corta la simulación
+
+    let ax,ay,az;
+    if(linOK && (lin.x || lin.y || lin.z)){
+      ax=lin.x; ay=lin.y; az=lin.z;
+    } else if(gOK){
+      const a=0.85;                   // low-pass para aislar la gravedad
+      gravity[0]=a*gravity[0]+(1-a)*gAcc.x;
+      gravity[1]=a*gravity[1]+(1-a)*gAcc.y;
+      gravity[2]=a*gravity[2]+(1-a)*gAcc.z;
+      ax=gAcc.x-gravity[0]; ay=gAcc.y-gravity[1]; az=gAcc.z-gravity[2];
+    } else {
+      return;
+    }
+    const mag = Math.sqrt(ax*ax+ay*ay+az*az);
+    magBuf.push(mag); if(magBuf.length>WIN) magBuf.shift();
+    const mean = magBuf.reduce((s,x)=>s+x,0)/magBuf.length;
+    const mov = Math.sqrt(magBuf.reduce((s,x)=>s+(x-mean)**2,0)/magBuf.length);
+
+    const r = e.rotationRate || {};
+    const gyr = Math.sqrt((r.alpha||0)**2+(r.beta||0)**2+(r.gamma||0)**2);
+    lastGyr = gyr;
+    render(mov, mag, gyr);
+  }
+
+  // ---- modo simulado (para escritorio / sin sensores) ----
+  let simState = 'still', simT = 0;
+  function simTick(){
+    simT++;
+    if(simT % 90 === 0){ // cambia de "actividad" cada ~3 s
+      simState = ['still','still','walk','vigorous'][Math.floor(Math.random()*4)];
+    }
+    const target = {still:0.05, walk:1.6, vigorous:4.2}[simState];
+    const mov = target + (Math.random()-0.5)*target*0.4;
+    render(Math.max(0,mov), 9.8+mov, mov*40);
+  }
+  let simTimer=null;
+  function startSim(){
+    if(simTimer) return;
+    simulated = true;
+    simState = 'still'; simT = 0;
+    modeFlag.innerHTML = '<span class="flag">Modo demostración · movimiento simulado</span>' +
+      '<button class="modebtn" id="simOff">Usar sensores reales</button>';
+    document.getElementById('simOff').addEventListener('click', function(){
+      stopSim();
+      modeFlag.innerHTML = '<span class="flag">Esperando sensores… mueve el dispositivo</span>' +
+        '<button class="modebtn" id="simOn">Volver a la demostración</button>';
+      document.getElementById('simOn').addEventListener('click', startSim);
+    });
+    simTimer = setInterval(simTick, 33);
+  }
+  function stopSim(){
+    if(simTimer){ clearInterval(simTimer); simTimer = null; }
+    simulated = false;
+    magBuf.length = 0;
+    modeFlag.innerHTML = '';
+  }
+
+  function begin(){
+    document.getElementById('intro').style.display='none';
+    document.getElementById('live').classList.add('on');
+    sizeCanvas();
+    // si en 1.8 s no llegan eventos reales, activa simulación
+    setTimeout(()=>{ if(!gotReal && !simulated) startSim(); }, 1800);
+  }
+
+  async function start(){
+    errEl.style.display='none';
+    try{
+      if(typeof DeviceMotionEvent!=='undefined' &&
+         typeof DeviceMotionEvent.requestPermission==='function'){
+        const res = await DeviceMotionEvent.requestPermission();
+        if(res!=='granted'){
+          errEl.textContent='Permiso de sensores denegado. Se mostrará el modo demostración.';
+          errEl.style.display='block';
+        }
+      }
+    }catch(err){ /* algunos navegadores lanzan si no hay gesto: seguimos */ }
+    window.addEventListener('devicemotion', onMotion);
+    begin();
+  }
+
+  function sizeCanvas(){
+    const r = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cssW = r.width; cssH = 70;
+    canvas.width = cssW * dpr;
+    canvas.height = cssH * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // dibujamos en unidades CSS
+  }
+
+  document.getElementById('startBtn').addEventListener('click', start);
+  window.addEventListener('resize', ()=>{ if(document.getElementById('live').classList.contains('on')) sizeCanvas(); });
+})();
+</script>
+</body>
+</html>
