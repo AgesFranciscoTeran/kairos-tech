@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kairos — Evidencia técnica</title>
+<meta name="description" content="Kairos: wearable de estimación fisiológica e intervención local. Documentación técnica, análisis de viabilidad y prototipos.">
+<style>
+  :root{
+    --ink:#050b08; --deep:#0a1410; --jade:#142a20; --card:#11241b;
+    --line:#254534; --gold:#d9b45b; --gold-dim:#a08c5e;
+    --cream:#f0e3bd; --sage:#93ab9d; --carmine:#8d2434;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans); color:var(--cream); line-height:1.6;
+    background:
+      radial-gradient(900px 550px at 82% 92%, rgba(217,180,91,.05), transparent 60%),
+      radial-gradient(1100px 700px at 22% 8%, #142a20 0%, #0a1410 48%, #050b08 100%);
+    background-attachment:fixed; min-height:100vh;
+    padding:clamp(28px,6vw,72px) clamp(18px,5vw,40px) 60px;
+  }
+  .wrap{max-width:960px; margin:0 auto}
+
+  /* ── encabezado ── */
+  header{border-bottom:1px solid var(--line); padding-bottom:30px; margin-bottom:38px}
+  h1{font-family:var(--serif); font-weight:400; font-size:clamp(34px,7vw,52px);
+     letter-spacing:.3em; color:var(--gold); text-transform:uppercase; margin-left:.14em}
+  .tagline{font-size:11.5px; letter-spacing:.24em; text-transform:uppercase;
+     color:var(--gold-dim); margin-top:12px}
+  .lede{font-family:var(--serif); font-size:clamp(17px,2.4vw,20px); line-height:1.65;
+     color:#dcd3b4; margin-top:26px; max-width:62ch}
+  .lede em{color:var(--gold); font-style:italic}
+
+  /* ── rejilla ── */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px}
+  .card{
+    background:linear-gradient(170deg,var(--card),#0d1c15);
+    border:1px solid var(--line); border-radius:14px; padding:24px 22px 20px;
+    display:flex; flex-direction:column; text-decoration:none; color:inherit;
+    position:relative; overflow:hidden; transition:border-color .2s, transform .2s;
+  }
+  .card::before{content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,var(--gold),transparent 70%); opacity:.55}
+  .card:hover{border-color:var(--gold-dim); transform:translateY(-2px)}
+  .card:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
+  .card .n{font-family:var(--serif); font-size:12px; letter-spacing:.2em; color:var(--gold-dim)}
+  .card h2{font-family:var(--serif); font-weight:400; font-size:21px; line-height:1.3;
+    color:var(--cream); margin:8px 0 10px}
+  .card p{font-size:14px; color:var(--sage); flex:1}
+  .card .go{font-size:12.5px; letter-spacing:.08em; color:var(--gold); margin-top:16px}
+
+  /* ── chip de estado: la señal honesta ── */
+  .chip{display:inline-block; align-self:flex-start; font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; padding:4px 10px; border-radius:999px; margin-bottom:14px;
+    border:1px solid currentColor}
+  .chip.works{color:#7fc79f}
+  .chip.spec{color:var(--gold-dim)}
+  .chip.ready{color:#c9a24b}
+  .chip.design{color:#c98b9a}
+
+  /* ── nota de estado ── */
+  .status{margin-top:38px; border:1px solid var(--line); border-left:3px solid var(--gold);
+    border-radius:0 12px 12px 0; padding:22px 24px; background:rgba(20,42,32,.4)}
+  .status h3{font-family:var(--serif); font-weight:400; font-size:16px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--gold); margin-bottom:12px}
+  .status p{font-size:14.5px; color:#c6c0a6; max-width:70ch}
+  .status p + p{margin-top:10px}
+  .status b{color:var(--cream); font-weight:600}
+
+  footer{margin-top:44px; padding-top:22px; border-top:1px solid var(--line);
+    font-size:12.5px; color:#6d7f73; letter-spacing:.03em}
+
+  @media (prefers-reduced-motion:reduce){ .card{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Kairos</h1>
+    <p class="tagline">Estimación fisiológica &middot; Intervención local &middot; Evidencia técnica</p>
+    <p class="lede">
+      Kairos estima estados de activación fisiológica bajo incertidumbre controlada y ejecuta
+      intervenciones locales de regulación. <em>No detecta emociones.</em> Esta página reúne la
+      evidencia técnica verificable del proyecto: lo que está medido, lo que está especificado
+      y lo que todavía no existe.
+    </p>
+  </header>
+
+  <div class="grid">
+
+    <a class="card" href="docs/KAIROS_Arquitectura_Tecnica_v1.1.docx">
+      <span class="chip spec">Especificación &middot; v1.1</span>
+      <span class="n">01</span>
+      <h2>Arquitectura técnica</h2>
+      <p>Las capas del sistema, los umbrales de intervención, la frontera de privacidad y los
+         riesgos conocidos. Incluye una sección explícita de lo que aún no está resuelto.</p>
+      <span class="go">Descargar documento &rarr;</span>
+    </a>
+
+    <a class="card" href="wesad-feasibility/">
+      <span class="chip ready">Listo para ejecutar</span>
+      <span class="n">02</span>
+      <h2>Análisis de viabilidad</h2>
+      <p>Mide la incertidumbre central del proyecto sobre datos públicos: ¿qué separabilidad
+         se alcanza entre activación real y benigna, y con qué tasa de falsas alarmas?</p>
+      <span class="go">Ver el código y el método &rarr;</span>
+    </a>
+
+    <a class="card" href="imu-demo/">
+      <span class="chip works">Funciona</span>
+      <span class="n">03</span>
+      <h2>Gating por movimiento</h2>
+      <p>Lee el acelerómetro y giroscopio reales del teléfono y decide en vivo si la señal
+         fisiológica puede interpretarse o debe bloquearse. Ábrelo desde el celular.</p>
+      <span class="go">Abrir el prototipo &rarr;</span>
+    </a>
+
+    <a class="card" href="render/">
+      <span class="chip design">Diseño</span>
+      <span class="n">04</span>
+      <h2>Producto e interfaz</h2>
+      <p>Render 3D interactivo con vista de despiece, más los mockups de los flujos: monitoreo,
+         detección sostenida, respiración guiada y escalamiento a contacto de confianza.</p>
+      <span class="go">Explorar el render &rarr;</span>
+    </a>
+
+  </div>
+
+  <section class="status">
+    <h3>Estado real del proyecto</h3>
+    <p>Kairos está en <b>etapa de diseño</b>. No hay producto desplegado, no hay dataset propio
+       y la aprobación ética todavía no se ha gestionado — es el requisito previo a cualquier
+       recolección con participantes.</p>
+    <p>Lo que sí existe está arriba, etiquetado por lo que realmente es. La apuesta del proyecto
+       es construir el primer dataset fisiológico <b>etiquetado con contexto verificado</b>:
+       cada evento asociado a lo que la persona efectivamente estaba haciendo. Ese emparejamiento
+       no existe en los datasets públicos, y es lo que hace utilizable el dato.</p>
+  </section>
+
+  <footer>
+    Kairos &middot; Documentación técnica del proyecto
+  </footer>
+
+</div>
+</body>
+</html>

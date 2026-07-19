@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kairos — Análisis de viabilidad (WESAD)</title>
+<style>
+  :root{
+    --deep:#0a1410; --card:#11241b; --line:#254534; --gold:#d9b45b;
+    --gold-dim:#a08c5e; --cream:#f0e3bd; --sage:#93ab9d;
+    --serif:Georgia,'Iowan Old Style','Times New Roman',serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:var(--sans); color:var(--cream); line-height:1.65;
+    background:radial-gradient(1000px 640px at 24% 6%, #142a20 0%, #0a1410 50%, #050b08 100%);
+    background-attachment:fixed; min-height:100vh;
+    padding:clamp(26px,5vw,60px) clamp(18px,5vw,40px) 60px;
+  }
+  .wrap{max-width:780px; margin:0 auto}
+  .back{font-size:12.5px; letter-spacing:.1em; color:var(--gold-dim); text-decoration:none}
+  .back:hover{color:var(--gold)}
+  h1{font-family:var(--serif); font-weight:400; font-size:clamp(26px,5vw,36px);
+     color:var(--gold); margin:22px 0 6px; line-height:1.2}
+  .sub{font-size:11.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold-dim)}
+  h2{font-family:var(--serif); font-weight:400; font-size:20px; color:var(--cream);
+     margin:34px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+  p{color:#c6c0a6; margin-bottom:14px}
+  b{color:var(--cream)}
+  em{color:var(--gold); font-style:normal}
+  ul{margin:0 0 14px 20px; color:#c6c0a6}
+  li{margin-bottom:8px}
+  table{width:100%; border-collapse:collapse; margin:14px 0 18px; font-size:14px}
+  th{text-align:left; color:var(--gold-dim); font-weight:600; font-size:11.5px;
+     letter-spacing:.12em; text-transform:uppercase; padding:8px 10px; border-bottom:1px solid var(--line)}
+  td{padding:9px 10px; border-bottom:1px solid rgba(37,69,52,.5); color:#c6c0a6; vertical-align:top}
+  td:first-child{color:var(--cream); font-weight:600; white-space:nowrap}
+  .files{display:flex; flex-wrap:wrap; gap:10px; margin-top:20px}
+  .file{font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:13px; color:var(--cream);
+     background:var(--card); border:1px solid var(--line); border-radius:8px;
+     padding:10px 15px; text-decoration:none; transition:border-color .2s}
+  .file:hover{border-color:var(--gold-dim)}
+  .note{border-left:3px solid var(--gold); background:rgba(20,42,32,.45);
+     border-radius:0 10px 10px 0; padding:18px 20px; margin-top:28px}
+  .note p:last-child{margin-bottom:0}
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--line);
+     font-size:12.5px; color:#6d7f73}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../">&larr; Kairos · Evidencia técnica</a>
+
+  <h1>Análisis de viabilidad sobre datos públicos</h1>
+  <p class="sub">Dataset WESAD &middot; señales de muñeca</p>
+
+  <h2>La pregunta</h2>
+  <p>La incertidumbre técnica central de Kairos es la <b>especificidad</b>: distinguir una
+     activación fisiológica genuina de una benigna —café, discusión, emoción intensa— con una
+     tasa de falsas alarmas lo bastante baja para que el sistema se siga usando.</p>
+  <p>La duda no es si el estrés altera la fisiología; claro que sí. Es si esa alteración es
+     <em>separable</em>. Este análisis mide esa separabilidad con datos públicos, <b>antes</b>
+     de recolectar datos propios.</p>
+
+  <h2>Por qué WESAD</h2>
+  <p>WESAD incluye dos dispositivos; usamos solo el de muñeca porque su form factor coincide
+     con el de Kairos y trae exactamente las mismas modalidades:</p>
+  <table>
+    <tr><th>Señal</th><th>Uso en Kairos</th></tr>
+    <tr><td>BVP</td><td>HRV, análogo al PPG del wearable</td></tr>
+    <tr><td>EDA</td><td>Nivel tónico y respuestas fásicas</td></tr>
+    <tr><td>Temperatura</td><td>Temperatura periférica</td></tr>
+    <tr><td>Acelerómetro</td><td>Gating por movimiento: descarta el confusor de ejercicio</td></tr>
+  </table>
+
+  <h2>Las dos comparaciones que importan</h2>
+  <ul>
+    <li><b>Fisiología sola frente a fisiología más gating por movimiento.</b>
+        ¿Descartar el ejercicio mejora de verdad la separación?</li>
+    <li><b>Normalización poblacional frente a línea base personal.</b>
+        La hipótesis de Kairos es que la normalidad fisiológica es idiosincrática, así que
+        normalizar contra el reposo de cada usuario debería separar mejor que una norma general.
+        La línea base personal se calcula usando solo las ventanas de reposo de cada sujeto.</li>
+  </ul>
+
+  <h2>Cómo se evalúa</h2>
+  <p>Con <b>Leave-One-Subject-Out</b>: se entrena con todos los sujetos menos uno y se prueba en
+     el que quedó fuera, de modo que las métricas reflejan generalización a personas nuevas y no
+     memorización.</p>
+  <p>No se reporta exactitud. Se reporta, a una <b>sensibilidad fija</b>, la <b>especificidad</b>
+     — es decir, uno menos la tasa de falsas alarmas. Traduce directo la pregunta del producto:
+     <em>si detectamos el 80% de los eventos reales, ¿qué fracción del reposo marcamos por error?</em></p>
+
+  <h2>Código</h2>
+  <div class="files">
+    <a class="file" href="kairos_wesad_separability.py">kairos_wesad_separability.py</a>
+    <a class="file" href="requirements.txt">requirements.txt</a>
+    <a class="file" id="repo" href="https://github.com">Ver en GitHub</a>
+  </div>
+
+  <div class="note">
+    <p><b>Alcance y honestidad.</b> Este análisis no trae resultados incluidos: los números salen
+       de ejecutarlo sobre WESAD. Es un instrumento para medir la incertidumbre, no una
+       afirmación de desempeño.</p>
+    <p>WESAD es estrés inducido en laboratorio con adultos. No es el escenario final de Kairos.
+       Sirve para fijar un piso realista y validar el pipeline, no para prometer el desempeño
+       en producción.</p>
+  </div>
+
+  <footer>
+    Schmidt, Reiss, Duerichen, Marberger &amp; Van Laerhoven (2018). Introducing WESAD, a
+    Multimodal Dataset for Wearable Stress and Affect Detection. ICMI.
+  </footer>
+
+</div>
+<script>
+  // Deriva el enlace al repositorio desde la URL de GitHub Pages: usuario.github.io/repo/
+  (function(){
+    var m = location.hostname.match(/^([^.]+)\.github\.io$/);
+    var seg = location.pathname.split('/').filter(Boolean);
+    var a = document.getElementById('repo');
+    if (m && seg.length) {
+      a.href = 'https://github.com/' + m[1] + '/' + seg[0] + '/tree/main/wesad-feasibility';
+    } else {
+      a.style.display = 'none';
+    }
+  })();
+</script>
+</body>
+</html>
