@@ -36,13 +36,14 @@
   .btn.on{background:rgba(217,180,91,.16); border-color:var(--gold); color:var(--cream)}
 
   #legend{
-    position:fixed; right:28px; top:50%; transform:translate(14px,-50%); z-index:5; width:250px;
+    position:fixed; right:24px; top:50%; transform:translate(14px,-50%); z-index:5; width:268px;
     opacity:0; pointer-events:none; transition:opacity .5s, transform .5s;
     font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
   }
   #legend.show{opacity:1; transform:translate(0,-50%)}
   #legend h2{font-family:Georgia,serif; font-weight:400; font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin:0 0 12px}
-  #legend .row{display:flex; gap:10px; align-items:baseline; margin:9px 0; font-size:12.5px; color:#d8cfae; line-height:1.45}
+  #legend .row{display:flex; gap:9px; align-items:baseline; margin:7px 0; font-size:11.5px; color:#cfc6a6; line-height:1.38}
+  #legend .row b{color:#f0e3bd; font-weight:600}
   #legend .num{flex:0 0 auto; width:20px; height:20px; border:1px solid rgba(217,180,91,.55); border-radius:50%;
     display:inline-flex; align-items:center; justify-content:center; font-size:10.5px; color:var(--gold)}
 
@@ -76,11 +77,15 @@
 </header>
 
 <div id="legend" aria-hidden="true">
-  <h2>Arquitectura</h2>
-  <div class="row"><span class="num">1</span><span>Cristal y pantalla AMOLED — modo proactivo e intervención</span></div>
-  <div class="row"><span class="num">2</span><span>Bisel de jade con aro interior de oro</span></div>
-  <div class="row"><span class="num">3</span><span>Núcleo en oro rosa — PPG &middot; EDA &middot; IMU &middot; temperatura, motor de seguridad determinista</span></div>
-  <div class="row"><span class="num">4</span><span>Correa grabada — háptica de respiración guiada</span></div>
+  <h2>Despiece</h2>
+  <div class="row"><span class="num">1</span><span><b>Cristal</b> — cubierta de protección</span></div>
+  <div class="row"><span class="num">2</span><span><b>Bisel de jade</b> — marco exterior</span></div>
+  <div class="row"><span class="num">3</span><span><b>Aro de oro</b> — pozo de la pantalla</span></div>
+  <div class="row"><span class="num">4</span><span><b>Pantalla AMOLED</b> — monitoreo, detección, intervención y escalamiento</span></div>
+  <div class="row"><span class="num">5</span><span><b>Placa principal</b> — Feather + EmotiBit: microcontrolador, radio WiFi y ranura microSD para registro local</span></div>
+  <div class="row"><span class="num">6</span><span><b>Batería</b> — 400 mAh; autonomía de horas con muestreo continuo</span></div>
+  <div class="row"><span class="num">7</span><span><b>Módulo de sensores</b> — PPG de tres longitudes de onda, termopila de temperatura e IMU de nueve ejes (el gating por movimiento)</span></div>
+  <div class="row"><span class="num">8</span><span><b>Carcasa y correa</b> — electrodos EDA en la cara posterior</span></div>
 </div>
 
 <div id="hint">Arrastra para rotar &middot; rueda o pellizco para zoom &middot; doble clic reencuadra &middot; H oculta controles</div>
@@ -89,7 +94,7 @@
 <nav aria-label="Controles del render">
   <button class="btn on" id="bRot">Rotación automática</button>
   <button class="btn" id="bExp">Vista de despiece</button>
-  <button class="btn" id="bScr">Pantalla: inicio</button>
+  <button class="btn" id="bScr">Pantalla: monitoreo</button>
   <button class="btn" id="bFull">Pantalla completa</button>
   <button class="btn" id="bHide">Modo presentación (H)</button>
 </nav>
@@ -257,7 +262,7 @@ function strapTexture(){
 }
 var strapMat = new THREE.MeshPhysicalMaterial({map:strapTexture(), metalness:0, roughness:0.55, clearcoat:0.25, clearcoatRoughness:0.4, side:THREE.DoubleSide, envMapIntensity:0.6});
 
-/* ---------- screen texture (vertical, dos modos) ---------- */
+/* ---------- screen texture (vertical, tres modos) ---------- */
 var SCR_W = 512, SCR_H = 1024;
 var scv = document.createElement('canvas'); scv.width = SCR_W; scv.height = SCR_H;
 var sctx = scv.getContext('2d');
@@ -266,6 +271,7 @@ screenTex.encoding = THREE.sRGBEncoding;
 screenTex.anisotropy = 8;
 
 var GREEN = '#8ce05e', GOLD = '#d8a94e', WHITE = '#f2efe4', GREY = '#9aa398';
+var ALERT = '#e8604a', BTN_RED = '#cf3d30', AMBER = '#f2b134';
 
 function screenBase(){
   var g = sctx;
@@ -281,6 +287,16 @@ function spacedTextCentered(g, txt, cx, y, gap){
   for (i = 0; i < txt.length; i++) total += g.measureText(txt[i]).width + (i < txt.length-1 ? gap : 0);
   var x = cx - total/2;
   for (i = 0; i < txt.length; i++){ g.fillText(txt[i], x, y); x += g.measureText(txt[i]).width + gap; }
+}
+/* dibuja texto centrado reduciendo el tamaño hasta que quepa en maxW */
+function fitText(g, txt, cx, y, maxW, basePx, family, weight){
+  var px = basePx, w = weight || '400';
+  g.font = w + ' ' + px + 'px ' + family;
+  while (g.measureText(txt).width > maxW && px > 10){
+    px -= 1;
+    g.font = w + ' ' + px + 'px ' + family;
+  }
+  g.fillText(txt, cx, y);
 }
 function drawKoiLogo(g, x, y, s, color){
   g.save(); g.translate(x, y); g.rotate(-0.45); g.scale(s, s);
@@ -321,7 +337,130 @@ function drawShield(g, x, y, s, color){
   g.moveTo(x - 7*s, y); g.lineTo(x - 1.5*s, y + 6*s); g.lineTo(x + 8*s, y - 6*s);
   g.stroke();
 }
-function drawScreenHome(){
+
+/* puntos de paginación — cuatro pantallas */
+function pageDots(g, y, active, color){
+  var offs = [-36, -12, 12, 36];
+  for (var i = 0; i < 4; i++){
+    g.fillStyle = (i === active) ? color : '#4d554b';
+    g.beginPath(); g.arc(256 + offs[i], y, 5.5, 0, 6.28); g.fill();
+  }
+}
+/* icono de persona (contacto de confianza) */
+function personIcon(g, x, y, s, color){
+  g.fillStyle = color;
+  g.beginPath(); g.arc(x, y - 6*s, 6.4*s, 0, 6.28); g.fill();
+  g.beginPath();
+  g.moveTo(x - 11*s, y + 12*s);
+  g.quadraticCurveTo(x - 11*s, y + 1.5*s, x, y + 1.5*s);
+  g.quadraticCurveTo(x + 11*s, y + 1.5*s, x + 11*s, y + 12*s);
+  g.closePath(); g.fill();
+}
+/* candado (escalamiento seguro) */
+function lockIcon(g, x, y, s, color){
+  g.strokeStyle = color; g.lineWidth = 2.2*s; g.lineCap = 'round';
+  g.beginPath(); g.arc(x, y - 4.5*s, 4.6*s, Math.PI, 0); g.stroke();
+  g.fillStyle = color;
+  rr(g, x - 7.2*s, y - 0.5*s, 14.4*s, 11*s, 2.6*s); g.fill();
+}
+
+/* ---------- ornamentos botánicos (pantalla de detección) ---------- */
+function leaf(g, x, y, len, wid, ang, color){
+  g.save(); g.translate(x, y); g.rotate(ang);
+  g.fillStyle = color;
+  g.beginPath();
+  g.moveTo(0, 0);
+  g.quadraticCurveTo(wid, len*0.42, 0, len);
+  g.quadraticCurveTo(-wid, len*0.42, 0, 0);
+  g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = 1.6;
+  g.beginPath(); g.moveTo(0, 3); g.lineTo(0, len - 3); g.stroke();
+  g.restore();
+}
+function hibiscus(g, x, y, r, petal, center){
+  g.save(); g.translate(x, y);
+  for (var i = 0; i < 5; i++){
+    g.save(); g.rotate(i*Math.PI*2/5);
+    g.fillStyle = petal;
+    g.beginPath(); g.ellipse(0, -r*0.62, r*0.40, r*0.66, 0, 0, 6.28); g.fill();
+    g.restore();
+  }
+  g.fillStyle = center;
+  g.beginPath(); g.arc(0, 0, r*0.21, 0, 6.28); g.fill();
+  g.restore();
+}
+function petal(g, x, y, r, ang, color){
+  g.save(); g.translate(x, y); g.rotate(ang);
+  g.fillStyle = color;
+  g.beginPath(); g.ellipse(0, 0, r*0.48, r, 0, 0, 6.28); g.fill();
+  g.restore();
+}
+function floralCorners(g){
+  // esquina superior izquierda
+  leaf(g, 26, 66, 74, 24, -0.45, '#2c7a49');
+  leaf(g, 62, 52, 60, 19, -1.05, '#3f9257');
+  leaf(g,  8, 118, 58, 19, -0.10, '#24603b');
+  hibiscus(g, 58, 116, 32, '#eda23c', '#e0602c');
+  hibiscus(g, 20, 62, 23, '#e45a60', '#f2c14e');
+  // esquina superior derecha
+  leaf(g, 486, 66, 74, 24, 0.45, '#2c7a49');
+  leaf(g, 450, 52, 60, 19, 1.05, '#3f9257');
+  leaf(g, 504, 118, 58, 19, 0.10, '#24603b');
+  hibiscus(g, 454, 114, 34, '#e45a60', '#f2c14e');
+  hibiscus(g, 494, 62, 23, '#eda23c', '#e0602c');
+}
+/* koi ilustrado para la pantalla de detección */
+function drawKoi(g, cx, cy, s, t){
+  g.save();
+  g.translate(cx, cy); g.scale(s, s);
+  g.rotate(-0.22 + Math.sin(t*1.1)*0.14);
+
+  // aleta caudal
+  g.fillStyle = '#efe7db';
+  g.beginPath();
+  g.moveTo(7, 24);
+  g.quadraticCurveTo(46, 44, 32, 80);
+  g.quadraticCurveTo(11, 60, 0, 76);
+  g.quadraticCurveTo(-12, 58, -32, 78);
+  g.quadraticCurveTo(-44, 42, -7, 24);
+  g.closePath(); g.fill();
+
+  // cuerpo
+  var bg = g.createLinearGradient(-32, -64, 32, 36);
+  bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#e9dfd0');
+  g.fillStyle = bg;
+  g.beginPath();
+  g.moveTo(0, -66);
+  g.bezierCurveTo(32, -60, 38, 4, 15, 32);
+  g.bezierCurveTo(7, 45, -7, 45, -15, 32);
+  g.bezierCurveTo(-38, 4, -32, -60, 0, -66);
+  g.closePath(); g.fill();
+
+  // manchas
+  g.fillStyle = '#e8622f';
+  g.beginPath(); g.ellipse(-5, -42, 14, 11, 0.30, 0, 6.28); g.fill();
+  g.beginPath(); g.ellipse(9, -12, 12, 15, -0.22, 0, 6.28); g.fill();
+  g.beginPath(); g.ellipse(-9, 14, 10, 9, 0, 0, 6.28); g.fill();
+  g.fillStyle = '#d1451f';
+  g.beginPath(); g.ellipse(2, -57, 9, 6, 0, 0, 6.28); g.fill();
+
+  // aletas laterales
+  g.fillStyle = 'rgba(242,235,224,0.92)';
+  g.beginPath();
+  g.moveTo(-16, -14); g.quadraticCurveTo(-44, -6, -35, 20); g.quadraticCurveTo(-23, 6, -14, -5);
+  g.closePath(); g.fill();
+  g.beginPath();
+  g.moveTo(16, -14); g.quadraticCurveTo(44, -6, 35, 20); g.quadraticCurveTo(23, 6, 14, -5);
+  g.closePath(); g.fill();
+
+  // ojos
+  g.fillStyle = '#1d2326';
+  g.beginPath(); g.arc(-9, -53, 3.4, 0, 6.28); g.fill();
+  g.beginPath(); g.arc(9, -53, 3.4, 0, 6.28); g.fill();
+  g.restore();
+}
+
+function drawScreenHome(t){
   screenBase();
   var g = sctx;
   g.textAlign = 'center'; g.textBaseline = 'alphabetic';
@@ -336,31 +475,74 @@ function drawScreenHome(){
 
   g.fillStyle = WHITE; g.font = '400 34px Georgia, serif';
   g.fillText('Good morning.', 256, 200);
-  g.fillStyle = GREEN; g.font = '400 24px system-ui, sans-serif';
-  g.fillText('Proactive mode is on.', 256, 238);
 
-  // tarjetas de métricas
-  metricCard(g, 40, 272, 208, 96, 'HRV', '72ms · Optimal');
-  metricCard(g, 264, 272, 208, 96, 'Temperature', '36.4°C · Stable');
+  // estado en vivo, con indicador que late
+  g.fillStyle = GREEN; g.font = '400 24px system-ui, sans-serif';
+  var modeTxt = 'Proactive mode is on.';
+  var mw = g.measureText(modeTxt).width;
+  g.fillText(modeTxt, 256 + 10, 238);
+  var blink = 0.35 + 0.65*Math.abs(Math.sin(t*1.6));
+  g.fillStyle = 'rgba(140,224,94,' + blink.toFixed(3) + ')';
+  g.beginPath(); g.arc(256 - mw/2 - 4, 230, 6, 0, 6.28); g.fill();
+
+  // métricas que respiran, como un panel realmente conectado
+  var hrv  = 72 + Math.round(Math.sin(t*0.68)*2 + Math.sin(t*1.7)*0.6);
+  var temp = (36.4 + Math.sin(t*0.43)*0.07).toFixed(1);
+  metricCard(g, 40, 272, 208, 96, 'HRV', hrv + 'ms · Optimal');
+  metricCard(g, 264, 272, 208, 96, 'Temperature', temp + '°C · Stable');
   metricCard(g, 40, 384, 208, 96, 'Body Load', 'Balanced');
   metricCard(g, 264, 384, 208, 96, 'Recovery', 'Strong');
 
   // gráfico semanal de recuperación
-  var x0 = 48, x1 = 452, yTop = 512, yBot = 668, n = 20;
+  var x0 = 48, x1 = 452, yBot = 668, n = 20;
   var pts = [];
   for (var i = 0; i < n; i++){
     var px = x0 + (x1 - x0)*i/(n-1);
-    var py = yBot - 8 - (i*7.4) - Math.max(0, Math.sin(i*2.1))*8;
+    var py = yBot - 8 - (i*7.4) - Math.max(0, Math.sin(i*2.1))*8
+             + Math.sin(t*1.5 + i*0.42)*4.2;          // la señal respira
     pts.push([px, py]);
   }
+
+  // barrido de monitoreo recorriendo el panel
+  var scanY = 258 + ((t*0.26) % 1)*430;
+  var scanG = g.createLinearGradient(0, scanY - 46, 0, scanY + 46);
+  scanG.addColorStop(0,   'rgba(140,224,94,0)');
+  scanG.addColorStop(0.5, 'rgba(140,224,94,0.11)');
+  scanG.addColorStop(1,   'rgba(140,224,94,0)');
+  g.fillStyle = scanG; g.fillRect(0, scanY - 46, SCR_W, 92);
+
   g.strokeStyle = 'rgba(70,80,66,0.8)'; g.lineWidth = 2;
   g.beginPath(); g.moveTo(x0 - 6, yBot + 10); g.lineTo(x1 + 12, yBot + 10); g.stroke();
+
   g.save();
   g.shadowColor = 'rgba(140,224,94,0.8)'; g.shadowBlur = 14;
   g.strokeStyle = GREEN; g.lineWidth = 4.5; g.lineJoin = 'round'; g.lineCap = 'round';
   g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
   for (var k = 1; k < n; k++) g.lineTo(pts[k][0], pts[k][1]);
   g.stroke();
+  g.restore();
+
+  // destello que recorre la curva
+  var head = (t*0.30) % 1.5;
+  if (head <= 1){
+    var hi = Math.floor(head*(n-1));
+    var a0 = Math.max(0, hi - 2), a1 = Math.min(n - 1, hi + 1);
+    g.save();
+    g.shadowColor = 'rgba(200,255,160,0.95)'; g.shadowBlur = 18;
+    g.strokeStyle = 'rgba(226,255,206,0.95)';
+    g.lineWidth = 5.5; g.lineJoin = 'round'; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(pts[a0][0], pts[a0][1]);
+    for (var q = a0 + 1; q <= a1; q++) g.lineTo(pts[q][0], pts[q][1]);
+    g.stroke();
+    g.restore();
+  }
+
+  // punto final con halo pulsante
+  var pulse = 0.5 + 0.5*Math.sin(t*2.3);
+  g.fillStyle = 'rgba(140,224,94,' + (0.22*pulse).toFixed(3) + ')';
+  g.beginPath(); g.arc(pts[n-1][0], pts[n-1][1], 11 + pulse*15, 0, 6.28); g.fill();
+  g.save();
+  g.shadowColor = 'rgba(140,224,94,0.9)'; g.shadowBlur = 12;
   g.fillStyle = GREEN;
   g.beginPath(); g.arc(pts[n-1][0], pts[n-1][1], 8, 0, 6.28); g.fill();
   g.restore();
@@ -378,6 +560,13 @@ function drawScreenHome(){
   g.fillStyle = 'rgba(26,30,24,0.85)'; g.fill();
   g.save(); rr(g, ix, iy, iw, ih, 20); g.clip();
   g.fillStyle = GREEN; g.fillRect(ix, iy, 7, ih);
+  // barrido suave sobre la tarjeta
+  var sweep = ((t*0.34) % 1.4) * (iw + 300) - 150;
+  var sg = g.createLinearGradient(ix + sweep - 110, 0, ix + sweep + 110, 0);
+  sg.addColorStop(0, 'rgba(140,224,94,0)');
+  sg.addColorStop(0.5, 'rgba(140,224,94,0.16)');
+  sg.addColorStop(1, 'rgba(140,224,94,0)');
+  g.fillStyle = sg; g.fillRect(ix, iy, iw, ih);
   g.restore();
   g.textAlign = 'left';
   g.fillStyle = GREEN; g.font = '500 24px system-ui, sans-serif';
@@ -390,15 +579,244 @@ function drawScreenHome(){
   g.fillText('emotional balance.', ix + 28, iy + 166);
   drawShield(g, ix + iw - 56, iy + 86, 1.15, GREEN);
 
-  // puntos de página
-  var dots = [-24, 0, 24];
-  for (var pd = 0; pd < 3; pd++){
-    g.fillStyle = pd === 0 ? GREEN : '#4d554b';
-    g.beginPath(); g.arc(256 + dots[pd], 962, 5.5, 0, 6.28); g.fill();
-  }
+  g.textAlign = 'center';
+  pageDots(g, 962, 0, GREEN);
   g.textAlign = 'left';
   screenTex.needsUpdate = true;
 }
+
+/* ---------- pantalla 2: detección de activación sostenida ---------- */
+function drawScreenAlert(t){
+  screenBase();
+  var g = sctx;
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+
+  floralCorners(g);
+
+  g.fillStyle = '#cfd4c9'; g.font = '400 23px system-ui, sans-serif';
+  g.fillText('10:47 AM', 256, 44);
+
+  drawKoiLogo(g, 256, 96, 0.8, WHITE);
+
+  g.fillStyle = GOLD; g.font = '500 28px Georgia, serif';
+  spacedTextCentered(g, 'KAIROS', 256, 152, 11);
+
+  // titular
+  g.fillStyle = WHITE;
+  fitText(g, 'Sustained', 256, 224, 430, 44, 'Georgia, serif', '400');
+  fitText(g, 'activation detected', 256, 274, 430, 44, 'Georgia, serif', '400');
+
+  // explicación
+  g.fillStyle = '#ddd9cc'; g.font = '400 23px system-ui, sans-serif';
+  g.fillText("Your body hasn't fully recovered", 256, 336);
+  g.fillText('in the last 18 hours.', 256, 370);
+
+  // evidencia que respalda la detección — late como una alarma contenida
+  g.save();
+  g.shadowColor = 'rgba(232,96,74,0.95)';
+  g.shadowBlur = 6 + 16*Math.abs(Math.sin(t*1.9));
+  g.fillStyle = ALERT; g.font = '500 26px system-ui, sans-serif';
+  g.fillText('HRV low · EDA elevated', 256, 428);
+  g.restore();
+
+  g.fillStyle = WHITE; g.font = '400 23px system-ui, sans-serif';
+  g.fillText("Let's regulate before escalation.", 256, 482);
+
+  // pétalos a la deriva
+  for (var i = 0; i < 12; i++){
+    var seed = i*137.5;
+    var px = 34 + ((seed*7) % 444);
+    var py = 170 + (((t*46) + seed*5) % 660);
+    petal(g, px, py, 8.5, t*1.1 + seed, i % 2 ? 'rgba(228,120,110,0.58)' : 'rgba(238,168,116,0.50)');
+  }
+
+  // ondas de detección expandiéndose desde el koi
+  for (var rp = 0; rp < 3; rp++){
+    var f = ((t*0.45) + rp/3) % 1;
+    g.strokeStyle = 'rgba(232,96,74,' + ((1 - f)*0.34).toFixed(3) + ')';
+    g.lineWidth = 3;
+    g.beginPath(); g.arc(256, 700, 44 + f*158, 0, 6.28); g.stroke();
+  }
+
+  // hojas de loto bajo el koi
+  leaf(g, 118, 700, 74, 26, 2.3, '#2a6f45');
+  leaf(g, 402, 706, 70, 24, -2.3, '#245f3c');
+  hibiscus(g, 132, 792, 30, '#e8894a', '#f2c14e');
+  hibiscus(g, 392, 786, 26, '#e45a60', '#f2c14e');
+
+  drawKoi(g, 256 + Math.sin(t*0.8)*13, 700 + Math.sin(t*1.15)*11, 1.25, t);
+
+  // botón de acción
+  var bx = 74, by = 858, bw = 364, bh = 76;
+  g.save();
+  g.shadowColor = 'rgba(207,61,48,0.65)';
+  g.shadowBlur = 16 + 8*Math.sin(t*1.7);
+  rr(g, bx, by, bw, bh, 38);
+  g.fillStyle = BTN_RED; g.fill();
+  g.restore();
+
+  g.fillStyle = '#ffffff'; g.font = '500 28px system-ui, sans-serif';
+  g.textAlign = 'center';
+  g.fillText('Begin Recovery', 256 - 16, by + 48);
+  g.strokeStyle = '#ffffff'; g.lineWidth = 3.6; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(bx + bw - 58, by + 30); g.lineTo(bx + bw - 44, by + 38); g.lineTo(bx + bw - 58, by + 46);
+  g.stroke();
+
+  // puntos de página
+  pageDots(g, 976, 1, ALERT);
+  g.textAlign = 'left';
+  screenTex.needsUpdate = true;
+}
+
+/* ---------- pantalla 4: escalamiento a contacto de confianza ---------- */
+function drawScreenEscalate(t){
+  screenBase();
+  var g = sctx;
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+
+  floralCorners(g);
+
+  g.fillStyle = '#cfd4c9'; g.font = '400 23px system-ui, sans-serif';
+  g.fillText('11:42 PM', 256, 44);
+
+  drawKoiLogo(g, 256, 96, 0.8, WHITE);
+
+  g.fillStyle = GOLD; g.font = '500 28px Georgia, serif';
+  spacedTextCentered(g, 'KAIROS', 256, 152, 11);
+
+  // titular
+  g.fillStyle = WHITE;
+  fitText(g, 'Recovery not', 256, 224, 430, 44, 'Georgia, serif', '400');
+  fitText(g, 'restored',     256, 272, 430, 44, 'Georgia, serif', '400');
+
+  // estado fisiológico
+  g.fillStyle = '#ddd9cc'; g.font = '400 23px system-ui, sans-serif';
+  g.fillText('Sustained activation', 256, 326);
+  g.fillText('remains elevated.', 256, 358);
+
+  // acción en curso
+  g.save();
+  g.shadowColor = 'rgba(242,177,52,0.85)';
+  g.shadowBlur = 5 + 13*Math.abs(Math.sin(t*1.5));
+  g.fillStyle = AMBER; g.font = '500 25px system-ui, sans-serif';
+  g.fillText('Escalating to', 256, 412);
+  g.fillText('trusted contact.', 256, 444);
+  g.restore();
+
+  // separador
+  g.strokeStyle = 'rgba(160,170,158,0.30)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(62, 484); g.lineTo(450, 484); g.stroke();
+
+  g.fillStyle = GREY; g.font = '400 22px system-ui, sans-serif';
+  g.fillText('Contacting:', 256, 528);
+
+  // avatar + nombre, centrados como grupo
+  var name = 'Vanessa';
+  g.font = '400 38px Georgia, serif';
+  var nw = g.measureText(name).width;
+  var av = 27, gap = 18;
+  var groupW = av*2 + gap + nw;
+  var ax = 256 - groupW/2 + av;
+  var ay = 596;
+
+  // halo que respira detrás del contacto
+  var halo = 0.5 + 0.5*Math.sin(t*1.6);
+  var hg = g.createRadialGradient(ax, ay, 8, ax, ay, 96);
+  hg.addColorStop(0, 'rgba(242,177,52,' + (0.16*halo).toFixed(3) + ')');
+  hg.addColorStop(1, 'rgba(242,177,52,0)');
+  g.fillStyle = hg;
+  g.beginPath(); g.arc(ax, ay, 96, 0, 6.28); g.fill();
+
+  // ondas de transmisión escalonadas
+  for (var rp = 0; rp < 4; rp++){
+    var f = ((t*0.62) + rp/4) % 1;
+    g.strokeStyle = 'rgba(242,177,52,' + ((1 - f)*0.62).toFixed(3) + ')';
+    g.lineWidth = 5 - f*2.5;
+    g.beginPath(); g.arc(ax, ay, av + f*74, 0, 6.28); g.stroke();
+  }
+
+  // aro fijo del avatar
+  g.strokeStyle = AMBER; g.lineWidth = 2.6;
+  g.beginPath(); g.arc(ax, ay, av, 0, 6.28); g.stroke();
+
+  // spinner girando: el envío está en curso
+  var spin = (t*2.8) % 6.283;
+  g.save();
+  g.strokeStyle = AMBER; g.lineWidth = 4.2; g.lineCap = 'round';
+  g.shadowColor = 'rgba(242,177,52,0.85)'; g.shadowBlur = 10;
+  g.beginPath(); g.arc(ax, ay, av + 11, spin, spin + 1.9); g.stroke();
+  g.restore();
+
+  personIcon(g, ax, ay + 2, 1.15, AMBER);
+
+  g.textAlign = 'left';
+  g.fillStyle = WHITE; g.font = '400 38px Georgia, serif';
+  g.fillText(name, ax + av + gap, ay + 13);
+
+  // mensaje que se enviará
+  g.textAlign = 'center';
+  g.fillStyle = '#d6d2c4'; g.font = '400 23px system-ui, sans-serif';
+  g.fillText('\u201CHigh stress detected.', 256, 672);
+  g.fillText('Please check in.\u201D', 256, 704);
+
+  // garantía de privacidad
+  var lbl = 'Secure human escalation';
+  g.font = '400 21px system-ui, sans-serif';
+  var lw = g.measureText(lbl).width;
+  var lx = 256 - (lw + 26)/2;
+  lockIcon(g, lx + 8, 762, 1.05, GREY);
+  g.textAlign = 'left';
+  g.fillStyle = GREY;
+  g.fillText(lbl, lx + 26, 770);
+  g.textAlign = 'center';
+
+  // botones
+  var by = 822, bh = 76;
+  // cancelar
+  var cx = 44, cw = 190;
+  rr(g, cx, by, cw, bh, 38);
+  g.fillStyle = '#242a26'; g.fill();
+  g.strokeStyle = 'rgba(180,190,180,0.25)'; g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#e6e2d6'; g.font = '400 26px system-ui, sans-serif';
+  g.fillText('Cancel', cx + cw/2, by + 48);
+
+  // enviando
+  var sx = 250, sw = 218;
+  g.save();
+  g.shadowColor = 'rgba(242,177,52,0.55)';
+  g.shadowBlur = 14 + 7*Math.sin(t*1.8);
+  rr(g, sx, by, sw, bh, 38);
+  g.fillStyle = AMBER; g.fill();
+  g.restore();
+
+  // progreso de envío dentro del botón
+  var prog = (t*0.52) % 1;
+  g.save();
+  rr(g, sx, by, sw, bh, 38); g.clip();
+  g.fillStyle = 'rgba(255,255,255,0.34)';
+  g.fillRect(sx, by, sw*prog, bh);
+  g.fillStyle = 'rgba(255,255,255,0.75)';
+  g.fillRect(sx + sw*prog - 4, by, 4, bh);
+  g.restore();
+
+  g.fillStyle = '#3a2a06'; g.font = '500 26px system-ui, sans-serif';
+  var full = 'Sending...';
+  var fw = g.measureText(full).width;
+  var startX = sx + sw/2 - fw/2;
+  g.textAlign = 'left';
+  g.fillText('Sending', startX, by + 48);
+  var sendW = g.measureText('Sending').width;
+  var nd = 1 + (Math.floor(t*1.6) % 3);
+  g.fillText('.'.repeat(nd), startX + sendW, by + 48);
+  g.textAlign = 'center';
+
+  pageDots(g, 954, 3, AMBER);
+
+  g.textAlign = 'left';
+  screenTex.needsUpdate = true;
+}
+
 function easeInOut(t){ return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2; }
 function drawScreenGuide(t){
   screenBase();
@@ -452,12 +870,7 @@ function drawScreenGuide(t){
   g.fillStyle = GREY; g.font = '400 19px system-ui, sans-serif';
   g.fillText('Cycle ' + (Math.floor(t/8) + 1) + ' of 6', kx + kw - 20, ky + 76);
   g.textAlign = 'center';
-  g.fillStyle = '#4d554b';
-  g.beginPath(); g.arc(232, 962, 5.5, 0, 6.28); g.fill();
-  g.fillStyle = GREEN;
-  g.beginPath(); g.arc(256, 962, 5.5, 0, 6.28); g.fill();
-  g.fillStyle = '#4d554b';
-  g.beginPath(); g.arc(280, 962, 5.5, 0, 6.28); g.fill();
+  pageDots(g, 962, 2, GREEN);
   g.textAlign = 'left';
   screenTex.needsUpdate = true;
 }
@@ -558,15 +971,15 @@ caseGroup.add(tip);
 
 /* bisel de jade — marco fino hasta el borde */
 var jadeShape = roundedRectShape(1.98, 3.13, 0.95);
-jadeShape.holes.push(roundedRectPathHole(1.36, 2.6, 0.6));
+jadeShape.holes.push(roundedRectPathHole(1.54, 2.86, 0.73));
 var jadeMesh = new THREE.Mesh(extrude(jadeShape, 0.3, 0.08), jade);
 jadeMesh.position.z = 0.34;
 jadeMesh.castShadow = true;
 yaw.add(jadeMesh);
 
 /* aro interior de oro (pozo de la pantalla) */
-var rimShape = roundedRectShape(1.32, 2.56, 0.56);
-rimShape.holes.push(roundedRectPathHole(1.2, 2.44, 0.5));
+var rimShape = roundedRectShape(1.50, 2.82, 0.71);
+rimShape.holes.push(roundedRectPathHole(1.42, 2.74, 0.66));
 var rimMesh = new THREE.Mesh(extrude(rimShape, 0.1, 0.04), goldTrim);
 rimMesh.position.z = 0.40;
 rimMesh.castShadow = true;
@@ -588,16 +1001,146 @@ function shapeGeoWithUV(shape){
 var screenGroup = new THREE.Group();
 var backingMat = blackGloss.clone();
 backingMat.side = THREE.DoubleSide;
-var backing = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.18, 2.42, 0.4)), backingMat);
+var backing = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.40, 2.72, 0.65)), backingMat);
 backing.position.z = -0.004;
 screenGroup.add(backing);
-var screenFace = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.1, 2.34, 0.37)), new THREE.MeshBasicMaterial({map:screenTex}));
+var screenFace = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.32, 2.64, 0.61)), new THREE.MeshBasicMaterial({map:screenTex}));
 screenGroup.add(screenFace);
-var glass = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.16, 2.4, 0.39)), glassMat);
-glass.position.z = 0.035;
-screenGroup.add(glass);
+var glassGroup = new THREE.Group();
+var glass = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.36, 2.68, 0.63)), glassMat);
+glassGroup.add(glass);
+glassGroup.position.z = 0.478;
+yaw.add(glassGroup);
 screenGroup.position.z = 0.44;
 yaw.add(screenGroup);
+
+/* ---------- interior: placa principal, batería y módulo de sensores ---------- */
+
+/* textura de PCB: pistas, vías y serigrafía */
+function pcbTexture(){
+  var cv = document.createElement('canvas'); cv.width = 512; cv.height = 832;
+  var g = cv.getContext('2d');
+  g.fillStyle = '#1d5c42'; g.fillRect(0, 0, 512, 832);
+  // pistas
+  g.strokeStyle = 'rgba(224,190,104,0.68)'; g.lineWidth = 3.4; g.lineCap = 'round';
+  for (var i = 0; i < 30; i++){
+    var x = 26 + ((i*97) % 460), y = 18 + ((i*151) % 790);
+    g.beginPath(); g.moveTo(x, y);
+    for (var s = 0; s < 2 + (i % 3); s++){
+      x += (i % 2 ? 58 : -58); y += (s % 2 ? 66 : 38);
+      g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  // buses paralelos
+  g.strokeStyle = 'rgba(206,172,92,0.34)'; g.lineWidth = 2;
+  for (var bnd = 0; bnd < 6; bnd++){
+    g.beginPath(); g.moveTo(60, 250 + bnd*9); g.lineTo(452, 250 + bnd*9); g.stroke();
+    g.beginPath(); g.moveTo(60, 580 + bnd*9); g.lineTo(452, 580 + bnd*9); g.stroke();
+  }
+  // vías
+  g.fillStyle = 'rgba(224,192,112,0.75)';
+  for (var v = 0; v < 46; v++){
+    g.beginPath(); g.arc(22 + ((v*137) % 468), 22 + ((v*211) % 788), 4.2, 0, 6.28); g.fill();
+  }
+  // serigrafía
+  g.fillStyle = 'rgba(226,238,226,0.55)';
+  g.font = '600 19px ui-monospace, monospace';
+  g.fillText('KAIROS  MAIN', 34, 46);
+  g.font = '400 15px ui-monospace, monospace';
+  g.fillText('FEATHER + EMOTIBIT', 34, 70);
+  g.fillText('U1  MCU', 300, 300);
+  g.fillText('U2  WIFI', 60, 470);
+  g.fillText('J1  microSD', 60, 700);
+  var tex = new THREE.CanvasTexture(cv);
+  tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 8;
+  return tex;
+}
+
+var pcbEdgeMat  = new THREE.MeshStandardMaterial({color:0x174a35, roughness:0.7, metalness:0.05});
+var pcbFaceMat  = new THREE.MeshStandardMaterial({map:pcbTexture(), roughness:0.62, metalness:0.10});
+var chipMat     = new THREE.MeshStandardMaterial({color:0x14171a, roughness:0.42, metalness:0.25});
+var shieldMat   = new THREE.MeshStandardMaterial({color:0xb9c0c6, roughness:0.30, metalness:0.95, envMapIntensity:1.1});
+var goldPinMat  = new THREE.MeshStandardMaterial({color:0xd7b45f, roughness:0.28, metalness:1.0});
+var cellMat     = new THREE.MeshStandardMaterial({color:0x2b3138, roughness:0.55, metalness:0.35});
+var cellWrapMat = new THREE.MeshStandardMaterial({color:0x8c2434, roughness:0.62, metalness:0.10});
+var darkBoardMat= new THREE.MeshStandardMaterial({color:0x0e1114, roughness:0.55, metalness:0.15});
+
+function chip(w, h, d, mat, x, y, z){
+  var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = true;
+  return m;
+}
+function led(x, y, z, color){
+  var m = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.098, 0.05, 24),
+    new THREE.MeshStandardMaterial({color:color, emissive:color, emissiveIntensity:2.4, roughness:0.28}));
+  m.rotation.x = Math.PI/2; m.position.set(x, y, z);
+  return m;
+}
+
+/* --- 5. placa principal (Feather + EmotiBit) --- */
+var boardGroup = new THREE.Group();
+var pcbBody = new THREE.Mesh(extrude(roundedRectShape(1.52, 2.52, 0.30), 0.055, 0.012), pcbEdgeMat);
+pcbBody.castShadow = true;
+boardGroup.add(pcbBody);
+var pcbFace = new THREE.Mesh(shapeGeoWithUV(roundedRectShape(1.50, 2.50, 0.29)), pcbFaceMat);
+pcbFace.position.z = 0.036;
+boardGroup.add(pcbFace);
+// microcontrolador
+boardGroup.add(chip(0.40, 0.40, 0.055, chipMat, 0.16, 0.62, 0.068));
+// blindaje del módulo WiFi
+boardGroup.add(chip(0.62, 0.40, 0.070, shieldMat, -0.24, -0.06, 0.076));
+// ranura microSD
+boardGroup.add(chip(0.44, 0.52, 0.062, shieldMat, -0.28, -0.86, 0.072));
+// conector de batería
+boardGroup.add(chip(0.26, 0.13, 0.050, goldPinMat, 0.42, -0.90, 0.066));
+// componentes pasivos
+for (var pc = 0; pc < 14; pc++){
+  var ang2 = pc*2.399;
+  boardGroup.add(chip(0.075, 0.05, 0.028, chipMat,
+    Math.cos(ang2)*0.56, Math.sin(ang2*1.7)*1.02, 0.055));
+}
+boardGroup.position.z = 0.12;
+yaw.add(boardGroup);
+
+/* --- 6. batería de 400 mAh --- */
+var batteryGroup = new THREE.Group();
+var cell = new THREE.Mesh(extrude(roundedRectShape(1.34, 1.62, 0.16), 0.15, 0.02), cellMat);
+cell.castShadow = true;
+batteryGroup.add(cell);
+var wrap = new THREE.Mesh(extrude(roundedRectShape(1.30, 0.40, 0.10), 0.155, 0.01), cellWrapMat);
+wrap.position.y = 0.42;
+batteryGroup.add(wrap);
+// lengüetas de contacto
+batteryGroup.add(chip(0.18, 0.10, 0.03, goldPinMat, -0.34, 0.90, 0.02));
+batteryGroup.add(chip(0.18, 0.10, 0.03, goldPinMat,  0.34, 0.90, 0.02));
+batteryGroup.position.z = -0.02;
+yaw.add(batteryGroup);
+
+/* --- 7. módulo de sensores: PPG · termopila · IMU --- */
+var sensorGroup = new THREE.Group();
+var sBoard = new THREE.Mesh(extrude(roundedRectShape(1.42, 1.24, 0.34), 0.05, 0.012), darkBoardMat);
+sBoard.castShadow = true;
+sensorGroup.add(sBoard);
+// anillo óptico del PPG
+var optRing = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.042, 14, 44), goldPinMat);
+optRing.position.z = -0.045;
+sensorGroup.add(optRing);
+// LEDs de tres longitudes de onda + fotodiodo
+sensorGroup.add(led(-0.25,  0.15, -0.065, 0x35ff7d));   // verde
+sensorGroup.add(led( 0.00,  0.27, -0.065, 0xff3535));   // rojo
+sensorGroup.add(led( 0.25,  0.15, -0.065, 0x9c1a1a));   // infrarrojo
+var photo = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.04, 24), chipMat);
+photo.rotation.x = Math.PI/2; photo.position.set(0, -0.10, -0.062);
+sensorGroup.add(photo);
+// termopila (temperatura)
+var thermo = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.080, 0.045, 22), shieldMat);
+thermo.rotation.x = Math.PI/2; thermo.position.set(-0.50, -0.34, -0.05);
+sensorGroup.add(thermo);
+// IMU de nueve ejes
+sensorGroup.add(chip(0.25, 0.25, 0.055, chipMat, 0.50, -0.34, -0.055));
+sensorGroup.position.z = -0.20;
+yaw.add(sensorGroup);
 
 /* ---------- suelo y sombra ---------- */
 var groundY = -4.15;
@@ -621,16 +1164,22 @@ scene.add(softShadow);
 var autoRotate = true, exploded = false, screenMode = 'home';
 var dragging = false, lastX = 0, lastY = 0, lastInteract = -10;
 var resetting = false, yawHome = 0.35, TILT_HOME = -0.3;
-var guideStart = 0;
+var guideStart = 0, alertStart = 0, escalateStart = 0, homeStart = 0;
 
+/* despiece en cascada: separación en Z más desplazamiento en Y,
+   para que ninguna capa quede tapada por la de adelante */
 var PARTS = [
-  {obj: screenGroup, base: 0.44, out: 1.9},
-  {obj: rimMesh,     base: 0.40, out: 1.24},
-  {obj: jadeMesh,    base: 0.34, out: 0.78},
-  {obj: caseGroup,   base: 0.0,  out: -0.55}
+  {obj: glassGroup,   base:  0.478, out:  2.55, outY:  1.30},   // 1 cristal
+  {obj: jadeMesh,     base:  0.34,  out:  2.00, outY:  0.92},   // 2 bisel de jade
+  {obj: rimMesh,      base:  0.40,  out:  1.55, outY:  0.58},   // 3 aro de oro
+  {obj: screenGroup,  base:  0.44,  out:  1.05, outY:  0.24},   // 4 pantalla AMOLED
+  {obj: boardGroup,   base:  0.12,  out:  0.35, outY: -0.14},   // 5 placa principal
+  {obj: batteryGroup, base: -0.02,  out: -0.42, outY: -0.52},   // 6 batería
+  {obj: sensorGroup,  base: -0.20,  out: -1.18, outY: -0.92},   // 7 módulo de sensores
+  {obj: caseGroup,    base:  0.0,   out: -2.00, outY: -1.34}    // 8 carcasa y correa
 ];
 
-drawScreenHome();
+drawScreenHome(0);
 
 var clock = new THREE.Clock();
 function animate(){
@@ -652,11 +1201,19 @@ function animate(){
 
   for (var i = 0; i < PARTS.length; i++){
     var P = PARTS[i];
-    var target = exploded ? P.out : P.base;
-    P.obj.position.z += (target - P.obj.position.z)*Math.min(1, dt*6);
+    var tz = exploded ? P.out : P.base;
+    var ty = exploded ? (P.outY || 0) : 0;
+    P.obj.position.z += (tz - P.obj.position.z)*Math.min(1, dt*6);
+    P.obj.position.y += (ty - P.obj.position.y)*Math.min(1, dt*6);
   }
+  // al despiezar, el módulo de sensores gira para mostrar su cara óptica
+  var sRot = exploded ? Math.PI : 0;
+  sensorGroup.rotation.y += (sRot - sensorGroup.rotation.y)*Math.min(1, dt*3.5);
 
-  if (screenMode === 'guide') drawScreenGuide(t - guideStart);
+  if (screenMode === 'home') drawScreenHome(t - homeStart);
+  else if (screenMode === 'alert') drawScreenAlert(t - alertStart);
+  else if (screenMode === 'guide') drawScreenGuide(t - guideStart);
+  else if (screenMode === 'escalate') drawScreenEscalate(t - escalateStart);
 
   renderer.render(scene, camera);
 }
@@ -763,23 +1320,32 @@ bRot.addEventListener('click', function(){
 });
 bExp.addEventListener('click', function(){
   exploded = !exploded;
+  distGoal = exploded ? Math.min(DIST_MAX, distHome*1.62) : distHome;
   bExp.classList.toggle('on', exploded);
   legend.classList.toggle('show', exploded);
   legend.setAttribute('aria-hidden', exploded ? 'false' : 'true');
 });
+
+/* recorrido del producto: monitoreo -> detección -> intervención */
+var SCREENS = ['home', 'alert', 'guide', 'escalate'];
+var SCREEN_LABEL = {
+  home:     'Pantalla: monitoreo',
+  alert:    'Pantalla: detección',
+  guide:    'Pantalla: intervención',
+  escalate: 'Pantalla: escalamiento'
+};
+var screenIdx = 0;
 bScr.addEventListener('click', function(){
-  if (screenMode === 'home'){
-    screenMode = 'guide';
-    guideStart = clock.elapsedTime;
-    bScr.textContent = 'Pantalla: intervención';
-    bScr.classList.add('on');
-  } else {
-    screenMode = 'home';
-    drawScreenHome();
-    bScr.textContent = 'Pantalla: inicio';
-    bScr.classList.remove('on');
-  }
+  screenIdx = (screenIdx + 1) % SCREENS.length;
+  screenMode = SCREENS[screenIdx];
+  bScr.textContent = SCREEN_LABEL[screenMode];
+  bScr.classList.toggle('on', screenMode !== 'home');
+  if (screenMode === 'home') homeStart = clock.elapsedTime;
+  if (screenMode === 'alert') alertStart = clock.elapsedTime;
+  if (screenMode === 'guide') guideStart = clock.elapsedTime;
+  if (screenMode === 'escalate') escalateStart = clock.elapsedTime;
 });
+
 bFull.addEventListener('click', function(){
   if (!document.fullscreenElement){
     document.documentElement.requestFullscreen().catch(function(){});
